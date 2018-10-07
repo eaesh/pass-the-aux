@@ -28,4 +28,6 @@ dependencies {
 
     api project(':spotify-app-remote')
     implementation "com.google.code.gson:gson:2.6.1"
+
+    api project(':volley-master')
 }

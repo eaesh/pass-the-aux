@@ -7,6 +7,13 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import com.android.volley.AuthFailureError;
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
 import com.spotify.android.appremote.api.ConnectionParams;
 import com.spotify.android.appremote.api.Connector;
 import com.spotify.android.appremote.api.PlayerApi;
@@ -17,9 +24,14 @@ import com.spotify.protocol.client.Subscription;
 import com.spotify.protocol.types.PlayerState;
 import com.spotify.protocol.types.Track;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class Home extends AppCompatActivity {
 
     private static final String CLIENT_ID = "8d7aebbeab044bc58fa49efa83948621";
+    private static final String CLIENT_SECRET = "8d3129d3c0294501980da7e41bbadad2";
+    private static final String AUTH_TOKEN = "Bearer BQB2jTaRHSA_Fh00drzmZSZLkbQn_xSULR6jBOaW3aSLcAe9PqfHwoPSwlkaslDfJJFsOBuJFDystf02yM8";
     private static final String REDIRECT_URI = "dev.eaesh.passtheaux://callback";
     private SpotifyAppRemote mSpotifyAppRemote;
 
@@ -59,57 +71,46 @@ public class Home extends AppCompatActivity {
             });
     }
 
-    private void connected() {
-        // Play a Playist
-        mSpotifyAppRemote.getPlayerApi().play("spotify:user:spotify:playlist:37i9dQZF1DX2sUQwD7tbmL");
-
-        // Subscribe to PlayerState
-        mSpotifyAppRemote.getPlayerApi()
-            .subscribeToPlayerState().setEventCallback(
-            new Subscription.EventCallback<PlayerState>() {
-                @Override
-                public void onEvent(PlayerState playerState) {
-                    final Track track = playerState.track;
-                    if (track != null) {
-                        Log.d("Home", "----- " + track.name + " by " + track.artist.name);
-                    }
-                }
-            });
-        //*/
-    }
-
     @Override
     protected void onStop() {
         super.onStop();
         SpotifyAppRemote.CONNECTOR.disconnect(mSpotifyAppRemote);
     }
 
-    public void search(View view) {
-        EditText searchTextBox = (EditText) findViewById(R.id.searchTextBox);
-        TextView resultsTextView = (TextView) findViewById(R.id.resultsTextView);
+    public void getAuthToken() {
 
-        String searchText = searchTextBox.getText().toString();
-        resultsTextView.setText(searchText);
     }
 
-    public void testPlayerState(View view) {
-        PlayerApi playerApi = mSpotifyAppRemote.getPlayerApi();
-        playerApi.getPlayerState()
-            .setResultCallback(new CallResult.ResultCallback<PlayerState>() {
-                @Override
-                public void onResult(PlayerState playerState) {
-                    String message = "isPaused(): " + playerState.isPaused + "\n";
-                    message += "toString(): " + playerState.toString();
+    public void search(View view) {
+        // View Elements
+        final TextView resultsTextView = (TextView) findViewById(R.id.resultsTextView);
+        String searchText = ((EditText) findViewById(R.id.searchTextBox)).getText().toString();
+        String url = "https://api.spotify.com/v1/search?type=track&q=" + searchText;
 
-                    TextView resultsTextView = (TextView) findViewById(R.id.resultsTextView);
-                    resultsTextView.setText(message);
-                }
-            })
-            .setErrorCallback(new ErrorCallback() {
-                @Override
-                public void onError(Throwable throwable) {
-                    Log.e("Home", "----- SPOTIFY ERROR: " + throwable.getMessage() + " -----", throwable);
-                }
-            });
+        RequestQueue queue = Volley.newRequestQueue(this);
+        StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
+                new Response.Listener<String>() {
+                    @Override
+                    public void onResponse(String response) {
+                        Log.d("Home", response);
+                        resultsTextView.setText(response);
+                    }
+                }, new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        Log.e("Home", "----- HTTP Request Error -----\t"
+                                + error.toString());
+                    }
+        }) {
+            // Headers
+            @Override
+            public Map<String, String> getHeaders() throws AuthFailureError {
+                Map<String, String> headers = new HashMap<String, String>();
+                headers.put("Content-Type", "application/x-www-form-urlencoded");
+                headers.put("Authorization", AUTH_TOKEN);
+                return headers;
+            }
+        };
+        queue.add(stringRequest);
     }
 }
