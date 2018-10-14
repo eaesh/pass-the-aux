@@ -9,10 +9,17 @@
 import UIKit
 
 @UIApplicationMain
-class AppDelegate: UIResponder, UIApplicationDelegate {
+class AppDelegate: UIResponder, UIApplicationDelegate, SPTSessionManagerDelegate {
 
     var window: UIWindow?
-
+    
+    // MARK: Spotify Authentication Variables
+    let SpotifyClientID = "8d7aebbeab044bc58fa49efa83948621"
+    let SpotifyRedirectURL = URL(string: "dev.eaesh.passtheaux://callback")!
+    lazy var configuration = SPTConfiguration(
+        clientID: SpotifyClientID,
+        redirectURL: SpotifyRedirectURL
+    )
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
         // Override point for customization after application launch.
@@ -42,5 +49,17 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
 
 
+    // MARK: Spotify Authentication
+    func sessionManager( manager: SPTSessionManager, didInitiate session: SPTSession) {
+        print("success", session)
+    }
+    
+    func sessionManager(manager: SPTSessionManager, didFailWith error: Error) {
+        print("fail", error)
+    }
+    
+    func sessionManager(manager: SPTSessionManager, didRenew session: SPTSession) {
+        print("renewed", session)
+    }
 }
 
